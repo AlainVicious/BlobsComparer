@@ -32,6 +32,9 @@ foreach (var contenedorOrigen in origen.Containers)
                 System.Console.WriteLine($"el archivo {file.Name} existe en el  StorageAccount {destino.Name}");
             }else{
                 System.Console.WriteLine($"el archivo {file.Name} no existe en el  StorageAccount {destino.Name} se debe copiar");
+                var toCopy = origen.Containers.Where(x=>x.Name == contenedorOrigen.Name).FirstOrDefault().Files.Where(x=> x.Name == file.Name).FirstOrDefault();
+                var copiar = new BlobClient(origen.ConnectionString, toCopy.BlobContainerName, toCopy.Name);
+                // await destino.CopyBlobAsync( copiar);
             }
         }
     }else

@@ -1,8 +1,6 @@
-﻿using Azure.Storage;
+﻿using Azure;
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Azure.Storage.Blobs.Specialized;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +17,8 @@ namespace BlobsComparer
     internal class Container
     {
         public string Name { get; set; }
-        public List<BlobFile> Files { get; set; }
+        public List<BlobClient> Files { get; set; }
+
     }
     internal class BlobContainerData
     {
@@ -36,22 +35,19 @@ namespace BlobsComparer
                     throw new Exception("La cadena de conexion esta vacia");
                 }
                 var blobServiceClient = new BlobServiceClient(this.ConnectionString);
-                var storageAccount = CloudStorageAccount.Parse(this.ConnectionString);
+
+                // var storageAccount = CloudStorageAccount.Parse(this.ConnectionString);
+
                 this.Containers = new List<Container>();
                 this.Name = blobServiceClient.AccountName;
                 await foreach (var blobItem in blobServiceClient.GetBlobContainersAsync())
                 {
                     var containerClient = blobServiceClient.GetBlobContainerClient(blobItem.Name);
                     var containerBlobs = containerClient.GetBlobs();
-                    var files = new List<BlobFile>();
+                    var files = new List<BlobClient>();
                     foreach (var b in containerBlobs)
                     {
-                        var blobClient = containerClient.GetBlobClient(b.Name);
-                        files.Add(new BlobFile()
-                        {
-                            Name = blobClient.Name,
-                            Uri = blobClient.Uri
-                        });
+                        files.Add(containerClient.GetBlobClient(b.Name));
                     }
                     this.Containers.Add(new Container()
                     {
@@ -65,6 +61,29 @@ namespace BlobsComparer
             {
                 System.Console.WriteLine("Error al intentar obtener la informacion de los blobs: " + ex.Message);
                 return false;
+            }
+        }
+
+        public async Task CopyBlobAsync(BlobClient sourceBlob)
+        {
+            try
+            {
+                if (await sourceBlob.ExistsAsync())
+                {
+
+                    var dest = new BlobClient(this.ConnectionString, sourceBlob.BlobContainerName, sourceBlob.Name);
+
+                    var blobServiceClient = new BlobServiceClient(this.ConnectionString);
+                    blobServiceClient.GetBlobContainerClient(sourceBlob.BlobContainerName);
+                    await dest.StartCopyFromUriAsync(sourceBlob.Uri);
+
+                }
+            }
+            catch (RequestFailedException ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.ReadLine();
+                
             }
         }
     }
