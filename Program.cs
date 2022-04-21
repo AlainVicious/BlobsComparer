@@ -22,12 +22,22 @@ foreach (var contenedorOrigen in origen.Containers)
     if (destino.Containers.Exists(x=> x.Name == contenedorOrigen.Name))
     {
         System.Console.WriteLine($"el folder {contenedorOrigen.Name} existe en el StorageAccount {destino.Name}");
+        foreach (var file in contenedorOrigen.Files)
+        {
+            var contenedorDestino = destino.Containers.Where(x=> x.Name == contenedorOrigen.Name).FirstOrDefault();
+            if(contenedorDestino == null)
+                continue;
+            if (contenedorDestino.Files.Exists(x=> x.Name == file.Name))
+            {
+                System.Console.WriteLine($"el archivo {file.Name} existe en el  StorageAccount {destino.Name}");
+            }else{
+                System.Console.WriteLine($"el archivo {file.Name} no existe en el  StorageAccount {destino.Name} se debe copiar");
+            }
+        }
     }else
     {
         System.Console.WriteLine($"el folder {contenedorOrigen.Name} no existe en el StorageAccount {destino.Name}, se debe copiar");
         
     }
-    
 }
-
 System.Console.WriteLine();

@@ -31,6 +31,10 @@ namespace BlobsComparer
         {
             try
             {
+                if (string.IsNullOrEmpty(this.ConnectionString))
+                {
+                    throw new Exception("La cadena de conexion esta vacia");
+                }
                 var blobServiceClient = new BlobServiceClient(this.ConnectionString);
                 var storageAccount = CloudStorageAccount.Parse(this.ConnectionString);
                 this.Containers = new List<Container>();
@@ -57,8 +61,9 @@ namespace BlobsComparer
                 }
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                System.Console.WriteLine("Error al intentar obtener la informacion de los blobs: " + ex.Message);
                 return false;
             }
         }
