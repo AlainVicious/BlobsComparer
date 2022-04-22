@@ -3,6 +3,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,8 @@ namespace BlobsComparer
     }
     internal class BlobContainerData
     {
+
+        public string SAS { get; set; }
         public string Name { get; set; }
         public string ConnectionString { get; set; }
         public List<Container> Containers { get; private set; }
@@ -64,27 +67,93 @@ namespace BlobsComparer
             }
         }
 
-        public async Task CopyBlobAsync(BlobClient sourceBlob)
+        public void CopyBlobAsync(string origen,string destino)
         {
             try
             {
-                if (await sourceBlob.ExistsAsync())
-                {
+                // if (sourceBlob.Exists())
+                // {
+                    // var cmd = $"azcopy.exe copy \"{origen}\" \"{destino}\" --recursive";
+                    // System.Console.WriteLine(cmd);
+                    var run = RunExternalExe("azcopy.exe",$"copy \"{origen}\" \"{destino}\" --recursive");
+                    System.Console.WriteLine(run);
+                    // var dest = new BlobClient(this.ConnectionString, sourceBlob.BlobContainerName, sourceBlob.Name);
 
-                    var dest = new BlobClient(this.ConnectionString, sourceBlob.BlobContainerName, sourceBlob.Name);
+                    // var blobServiceClient = new BlobServiceClient(this.ConnectionString);
+                    // blobServiceClient.GetBlobContainerClient(sourceBlob.BlobContainerName);
+                    // var r = dest.StartCopyFromUriAsync(sourceBlob.Uri).Result;
 
-                    var blobServiceClient = new BlobServiceClient(this.ConnectionString);
-                    blobServiceClient.GetBlobContainerClient(sourceBlob.BlobContainerName);
-                    await dest.StartCopyFromUriAsync(sourceBlob.Uri);
-
-                }
+                // }
             }
             catch (RequestFailedException ex)
             {
                 Console.WriteLine(ex.Message);
                 Console.ReadLine();
-                
+
             }
+        }
+
+
+        public string RunExternalExe(string filename, string arguments = null)
+        {
+            var process = new Process();
+
+            process.StartInfo.FileName = filename;
+            if (!string.IsNullOrEmpty(arguments))
+            {
+                process.StartInfo.Arguments = arguments;
+            }
+
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            process.StartInfo.UseShellExecute = false;
+
+            process.StartInfo.RedirectStandardError = true;
+            process.StartInfo.RedirectStandardOutput = true;
+            var stdOutput = new StringBuilder();
+            process.OutputDataReceived += (sender, args) => stdOutput.AppendLine(args.Data); // Use AppendLine rather than Append since args.Data is one line of output, not including the newline character.
+
+            string stdError = null;
+            try
+            {
+                process.Start();
+                process.BeginOutputReadLine();
+                stdError = process.StandardError.ReadToEnd();
+                process.WaitForExit();
+            }
+            catch (Exception e)
+            {
+                throw new Exception("OS error while executing " + Format(filename, arguments) + ": " + e.Message, e);
+            }
+
+            if (process.ExitCode == 0)
+            {
+                return stdOutput.ToString();
+            }
+            else
+            {
+                var message = new StringBuilder();
+
+                if (!string.IsNullOrEmpty(stdError))
+                {
+                    message.AppendLine(stdError);
+                }
+
+                if (stdOutput.Length != 0)
+                {
+                    message.AppendLine("Std output:");
+                    message.AppendLine(stdOutput.ToString());
+                }
+
+                throw new Exception(Format(filename, arguments) + " finished with exit code = " + process.ExitCode + ": " + message);
+            }
+        }
+
+        private string Format(string filename, string arguments)
+        {
+            return "'" + filename +
+                ((string.IsNullOrEmpty(arguments)) ? string.Empty : " " + arguments) +
+                "'";
         }
     }
 }
