@@ -10,6 +10,11 @@ IConfiguration config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
+var hacerTransferencia = false;
+if (args.Length > 0)
+{
+    hacerTransferencia = args[0] == "-c";
+}
 var conexiones = config.GetRequiredSection("ConnectionStrings").Get<ConnectionStrings>();
 var origen = conexiones.Origen;
 var destino = conexiones.Destino;
@@ -38,7 +43,8 @@ foreach (var contenedorOrigen in origen.Containers)
                 var copiar = new BlobClient(origen.ConnectionString, toCopy.BlobContainerName, toCopy.Name);
                 var destinourl = $"https://{destino.Name}.blob.core.windows.net{toCopy.Uri.LocalPath}{destino.SAS}";
                 var copiarurl = $"https://{origen.Name}.blob.core.windows.net{toCopy.Uri.LocalPath}{origen.SAS}";
-                destino.CopyBlobAsync(copiarurl, destinourl);
+                if (hacerTransferencia)
+                    destino.CopyBlobAsync(copiarurl, destinourl);
             }
         }
     }
@@ -47,7 +53,8 @@ foreach (var contenedorOrigen in origen.Containers)
         System.Console.WriteLine($"el folder {contenedorOrigen.Name} no existe en el StorageAccount {destino.Name}, se debe copiar");
         var destinourl = $"https://{destino.Name}.blob.core.windows.net/{contenedorOrigen.Name}{destino.SAS}";
         var copiarurl = $"https://{origen.Name}.blob.core.windows.net/{contenedorOrigen.Name}{origen.SAS}";
-        destino.CopyBlobAsync(copiarurl, destinourl);
+        if(hacerTransferencia)
+            destino.CopyBlobAsync(copiarurl, destinourl);
     }
 }
 System.Console.WriteLine();
