@@ -27,6 +27,7 @@ namespace BlobsComparer
         public string SAS { get; set; }
         public string Name { get; set; }
         public string ConnectionString { get; set; }
+        public int FilesCount { get; set; }
         public List<Container> Containers { get; private set; }
 
         public async Task<bool> GetContent()
@@ -51,6 +52,7 @@ namespace BlobsComparer
                     foreach (var b in containerBlobs)
                     {
                         files.Add(containerClient.GetBlobClient(b.Name));
+                        FilesCount++;
                     }
                     this.Containers.Add(new Container()
                     {
@@ -67,21 +69,21 @@ namespace BlobsComparer
             }
         }
 
-        public void CopyBlobAsync(string origen,string destino)
+        public void CopyBlobAsync(string origen, string destino)
         {
             try
             {
                 // if (sourceBlob.Exists())
                 // {
-                    // var cmd = $"azcopy.exe copy \"{origen}\" \"{destino}\" --recursive";
-                    // System.Console.WriteLine(cmd);
-                    var run = RunExternalExe("azcopy.exe",$"copy \"{origen}\" \"{destino}\" --recursive");
-                    System.Console.WriteLine(run);
-                    // var dest = new BlobClient(this.ConnectionString, sourceBlob.BlobContainerName, sourceBlob.Name);
+                // var cmd = $"azcopy.exe copy \"{origen}\" \"{destino}\" --recursive";
+                // System.Console.WriteLine(cmd);
+                var run = RunExternalExe("azcopy.exe", $"copy \"{origen}\" \"{destino}\" --recursive");
+                System.Console.WriteLine(run);
+                // var dest = new BlobClient(this.ConnectionString, sourceBlob.BlobContainerName, sourceBlob.Name);
 
-                    // var blobServiceClient = new BlobServiceClient(this.ConnectionString);
-                    // blobServiceClient.GetBlobContainerClient(sourceBlob.BlobContainerName);
-                    // var r = dest.StartCopyFromUriAsync(sourceBlob.Uri).Result;
+                // var blobServiceClient = new BlobServiceClient(this.ConnectionString);
+                // blobServiceClient.GetBlobContainerClient(sourceBlob.BlobContainerName);
+                // var r = dest.StartCopyFromUriAsync(sourceBlob.Uri).Result;
 
                 // }
             }
@@ -123,7 +125,7 @@ namespace BlobsComparer
             }
             catch (Exception e)
             {
-                throw new Exception("OS error while executing " + Format(filename, arguments) + ": " + e.Message, e);
+                return "OS error while executing " + Format(filename, arguments) + ": " + e.Message;
             }
 
             if (process.ExitCode == 0)
@@ -145,7 +147,7 @@ namespace BlobsComparer
                     message.AppendLine(stdOutput.ToString());
                 }
 
-                throw new Exception(Format(filename, arguments) + " finished with exit code = " + process.ExitCode + ": " + message);
+                return Format(filename, arguments) + " finished with exit code = " + process.ExitCode + ": " + message;
             }
         }
 

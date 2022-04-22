@@ -21,7 +21,10 @@ var destino = conexiones.Destino;
 
 var setDestino = await destino.GetContent();
 var setOrigen = await origen.GetContent();
-
+System.Console.WriteLine($"Contenedores en origen: {origen.Containers.Count}");
+System.Console.WriteLine($"Contenedores en destino: {destino.Containers.Count}");
+System.Console.WriteLine($"Archivos en origen: {origen.FilesCount}");
+System.Console.WriteLine($"Archivos en destino: {destino.FilesCount}");
 foreach (var contenedorOrigen in origen.Containers)
 {
     if (destino.Containers.Exists(x => x.Name == contenedorOrigen.Name))
@@ -44,7 +47,10 @@ foreach (var contenedorOrigen in origen.Containers)
                 var destinourl = $"https://{destino.Name}.blob.core.windows.net{toCopy.Uri.LocalPath}{destino.SAS}";
                 var copiarurl = $"https://{origen.Name}.blob.core.windows.net{toCopy.Uri.LocalPath}{origen.SAS}";
                 if (hacerTransferencia)
+                {
+                    System.Console.WriteLine($"copiando {file.Name}");
                     destino.CopyBlobAsync(copiarurl, destinourl);
+                }
             }
         }
     }
@@ -53,8 +59,11 @@ foreach (var contenedorOrigen in origen.Containers)
         System.Console.WriteLine($"el folder {contenedorOrigen.Name} no existe en el StorageAccount {destino.Name}, se debe copiar");
         var destinourl = $"https://{destino.Name}.blob.core.windows.net/{contenedorOrigen.Name}{destino.SAS}";
         var copiarurl = $"https://{origen.Name}.blob.core.windows.net/{contenedorOrigen.Name}{origen.SAS}";
-        if(hacerTransferencia)
+        if (hacerTransferencia)
+        {
+            System.Console.WriteLine($"copiando contenido de {contenedorOrigen.Name}");
             destino.CopyBlobAsync(copiarurl, destinourl);
+        }
     }
 }
 System.Console.WriteLine();
